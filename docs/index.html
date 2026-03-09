@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shiny App</title>
+    <title>TAE Calculator</title>
     <script
       src="./shinylive/load-shinylive-sw.js"
       type="module"
@@ -22,6 +22,34 @@
   </head>
   <body>
     
+    <div id="loading-msg" style="
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: Arial, sans-serif; background: #f5f6fa; z-index: 9999;">
+      <div style="font-size: 1.3em; font-weight: bold; color: #2c7be5; margin-bottom: 10px;">
+        TAE Calculator
+      </div>
+      <div style="color: #555; margin-bottom: 18px;">
+        Loading R engine — first visit only, please wait…
+      </div>
+      <div style="width: 220px; height: 6px; background: #dde; border-radius: 3px; overflow: hidden;">
+        <div style="width: 40%; height: 100%; background: #2c7be5; border-radius: 3px;
+                    animation: bar 1.4s ease-in-out infinite alternate;">
+        </div>
+      </div>
+      <style>
+        @keyframes bar { from { margin-left: 0 } to { margin-left: 60% } }
+      </style>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var root = document.getElementById("root");
+        var msg  = document.getElementById("loading-msg");
+        new MutationObserver(function() {
+          if (root.children.length > 0) { msg.style.display = "none"; }
+        }).observe(root, { childList: true });
+      });
+    </script>
     <div style="height: 100vh; width: 100vw" id="root"></div>
     
   </body>
