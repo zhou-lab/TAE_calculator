@@ -6,7 +6,7 @@ All computation runs in the browser via WebAssembly — no server required.
 
 ## Live App
 
-👉 **https://\<your-github-username\>.github.io/TAE_calculator/**
+👉 **https://zhou-lab.github.io/TAE_calculator/**
 
 ## Inputs
 
