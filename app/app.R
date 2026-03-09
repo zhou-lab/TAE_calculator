@@ -1,5 +1,4 @@
 library(shiny)
-library(ggplot2)
 
 # ---------------------------------------------------------------------------
 # Hardcoded training data (from 20240109_SparseSeqTable_reformated.xlsx)
@@ -432,38 +431,48 @@ server <- function(input, output, session) {
 
   # Heatmap
   output$heatmap_plot <- renderPlot({
-    plot_df       <- grid_df
-    plot_df$x_pct <- plot_df$x * 100
-    plot_df$tae_p <- plot_df$z * 100
+    nx <- length(unique(grid_df$x))
+    ny <- length(unique(grid_df$y))
+    gx <- sort(unique(grid_df$x)) * 100   # convert to %
+    gy <- sort(unique(grid_df$y))
+    zm <- matrix(pmin(grid_df$z * 100, 100),
+                 nrow = nx, ncol = ny)
 
-    p <- ggplot(plot_df, aes(x = x_pct, y = y)) +
-      geom_tile(aes(fill = tae_p)) +
-      scale_fill_gradientn(
-        colours = c("#053061","#2166ac","#4393c3","#92c5de",
-                    "#f7f7f7","#fdbf6f","#e31a1c","#67000d"),
-        name    = "TAE (%)",
-        limits  = c(0, 100),
-        oob     = scales::squish
-      ) +
-      geom_contour(aes(z = tae_p), colour = "white", alpha = 0.3,
-                   breaks = c(5, 10, 20, 30, 50, 80)) +
-      labs(
-        x = "% Total C modification (model input x) \u00d7 100",
-        y = expression(log[2](Genome~CpG~coverage~fraction/100))
-      ) +
-      theme_minimal(base_size = 13) +
-      theme(panel.grid = element_blank(), legend.position = "right")
+    pal <- colorRampPalette(c("#053061","#2166ac","#4393c3","#92c5de",
+                               "#f7f7f7","#fdbf6f","#e31a1c","#67000d"))(100)
+
+    par(mar = c(5, 5, 2, 5))
+    image(gx, gy, zm, col = pal, zlim = c(0, 100),
+          xlab = "% Total C modification \u00d7 100",
+          ylab = expression(log[2](Genome~coverage~fraction)),
+          useRaster = TRUE)
+
+    contour(gx, gy, zm, levels = c(5, 10, 20, 30, 50, 80),
+            col = "white", lwd = 1, add = TRUE, labcex = 0.7)
+
+    # Colour legend
+    legend_x <- par("usr")[2] + diff(par("usr")[1:2]) * 0.02
+    legend_y_bot <- par("usr")[3]
+    legend_y_top <- par("usr")[4]
+    legend_vals  <- seq(0, 100, length.out = 100)
+    legend_ys    <- seq(legend_y_bot, legend_y_top, length.out = 101)
+    for (i in seq_along(legend_vals)) {
+      rect(legend_x, legend_ys[i], legend_x + diff(par("usr")[1:2]) * 0.04,
+           legend_ys[i + 1], col = pal[i], border = NA, xpd = TRUE)
+    }
+    text(legend_x + diff(par("usr")[1:2]) * 0.05,
+         seq(legend_y_bot, legend_y_top, length.out = 6),
+         labels = seq(0, 100, by = 20), xpd = TRUE, cex = 0.8)
+    text(legend_x + diff(par("usr")[1:2]) * 0.05,
+         legend_y_top + diff(par("usr")[3:4]) * 0.03,
+         "TAE (%)", xpd = TRUE, cex = 0.9)
 
     # Add user's point if calculation done
     r <- calc_result()
     if (!is.null(r)) {
-      pt <- data.frame(x = r$x_model * 100, y = r$y_model)
-      p <- p +
-        geom_point(data = pt, aes(x = x, y = y),
-                   colour = "red", size = 5, shape = 21,
-                   fill = "white", stroke = 2.5)
+      points(r$x_model * 100, r$y_model,
+             pch = 21, col = "red", bg = "white", cex = 2.5, lwd = 2.5)
     }
-    p
   })
 }
 
