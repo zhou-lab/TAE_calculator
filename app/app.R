@@ -166,6 +166,29 @@ REGION_SCALE <- c(
   "EnhLo"        = 0.00253651
 )
 
+# Display labels for ChromHMM states (name = label shown in UI, value = key in REGION_SCALE)
+REGION_CHOICES <- c(
+  "Whole Genome"                           = "Whole Genome",
+  "Quies — Quiescent (large)"              = "Quies",
+  "QuiesG — Quiescent (gene-rich)"         = "QuiesG",
+  "Quies2 — Quiescent 2"                   = "Quies2",
+  "Quies3 — Quiescent 3"                   = "Quies3",
+  "Quies4 — Quiescent 4"                   = "Quies4",
+  "Tx — Active transcription"              = "Tx",
+  "TxWk — Weak transcription"              = "TxWk",
+  "Tss — Active TSS"                       = "Tss",
+  "TssFlnk — Flanking TSS"                 = "TssFlnk",
+  "TssBiv — Bivalent TSS"                  = "TssBiv",
+  "Enh — Active enhancer"                  = "Enh",
+  "EnhG — Genic enhancer"                  = "EnhG",
+  "EnhPr — Primed enhancer"                = "EnhPr",
+  "EnhLo — Low-activity enhancer"          = "EnhLo",
+  "EnhPois — Poised enhancer"              = "EnhPois",
+  "ReprPC — Repressed polycomb"            = "ReprPC",
+  "ReprPCWk — Weak repressed polycomb"     = "ReprPCWk",
+  "Het — Heterochromatin"                  = "Het"
+)
+
 # C-type fractions: fraction of ALL cytosines in that context (mouse genome)
 #   CpG C's ≈ 4% of all C's
 #   CpH C's ≈ 96% of all C's (the rest)
@@ -243,7 +266,7 @@ ui <- fluidPage(
                     selected = "CpG"),
 
         selectInput("region", "Genomic region",
-                    choices = names(REGION_SCALE),
+                    choices = REGION_CHOICES,
                     selected = "Whole Genome"),
 
         br(),
