@@ -446,6 +446,11 @@ server <- function(input, output, session) {
           div(class = "result-value", sprintf("%.3f%%", r$tae_pct)),
           div(class = "result-label", "Estimated Total Analytical Error (TAE)")
       ),
+      div(class = "result-box", style = "margin-top:10px;",
+          div(class = "result-value",
+              sprintf("%.4f \u00b1 %.4f", r$beta, r$tae_pct / 100 * r$beta)),
+          div(class = "result-label", "Beta value \u00b1 error (TAE \u00d7 beta)")
+      ),
       warn,
       div(style = "font-size:0.78em; color:#ccc; margin-top:8px;",
           sprintf("Model inputs: x = %.5f, y = %.3f", r$x_model, r$y_model))
