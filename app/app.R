@@ -420,7 +420,7 @@ server <- function(input, output, session) {
       hr(),
       div(class = "section-title", "Result"),
       div(class = "result-box",
-          div(class = "result-value", sprintf("%.2f%%", r$tae_pct)),
+          div(class = "result-value", sprintf("%.3f%%", r$tae_pct)),
           div(class = "result-label", "Estimated Total Analytical Error (TAE)")
       ),
       warn,
