@@ -46,8 +46,10 @@
         var root = document.getElementById("root");
         var msg  = document.getElementById("loading-msg");
         new MutationObserver(function() {
-          if (root.children.length > 0) { msg.style.display = "none"; }
-        }).observe(root, { childList: true });
+          if (root.querySelector(".shiny-input-container, .shiny-bound-output, #shiny-disconnected-overlay")) {
+            msg.style.display = "none";
+          }
+        }).observe(root, { childList: true, subtree: true });
       });
     </script>
     <div style="height: 100vh; width: 100vw" id="root"></div>
