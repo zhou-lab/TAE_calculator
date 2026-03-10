@@ -45,37 +45,24 @@
       document.addEventListener("DOMContentLoaded", function() {
         var root = document.getElementById("root");
         var msg  = document.getElementById("loading-msg");
-        new MutationObserver(function(mutations, outerObs) {
-          var iframe = root.querySelector("iframe");
-          if (!iframe) return;
-          outerObs.disconnect();
-
-          // Inject CSS to hide shinylive's honeycomb inside the iframe
-          function injectHide(doc) {
-            if (!doc || !doc.head) return;
-            var s = doc.createElement("style");
-            s.textContent = ".loading-animation { display: none !important; }";
-            doc.head.appendChild(s);
+        function isReady() {
+          // Check directly in root
+          if (root.querySelector(".shiny-input-container, .shiny-bound-output")) return true;
+          // Check inside any same-origin iframe
+          var frames = root.querySelectorAll("iframe");
+          for (var i = 0; i < frames.length; i++) {
+            try {
+              var doc = frames[i].contentDocument;
+              if (doc && doc.querySelector(".shiny-input-container, .shiny-bound-output")) return true;
+            } catch(e) {}
           }
-
-          function setupInnerWatch() {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            injectHide(doc);
-            // Watch inside iframe for Shiny being ready
-            new MutationObserver(function(m, innerObs) {
-              if (doc.querySelector(".shiny-input-container, .shiny-bound-output")) {
-                msg.style.display = "none";
-                innerObs.disconnect();
-              }
-            }).observe(doc.documentElement, { childList: true, subtree: true });
-          }
-
-          if (iframe.contentDocument && iframe.contentDocument.readyState !== "loading") {
-            setupInnerWatch();
-          } else {
-            iframe.addEventListener("load", setupInnerWatch);
-          }
-        }).observe(root, { childList: true, subtree: true });
+          return false;
+        }
+        var t = setInterval(function() {
+          if (isReady()) { msg.style.display = "none"; clearInterval(t); }
+        }, 300);
+        // Fallback: give up after 3 minutes
+        setTimeout(function() { msg.style.display = "none"; clearInterval(t); }, 180000);
       });
     </script>
     <div style="height: 100vh; width: 100vw" id="root"></div>
