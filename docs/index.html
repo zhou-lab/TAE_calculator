@@ -45,9 +45,35 @@
       document.addEventListener("DOMContentLoaded", function() {
         var root = document.getElementById("root");
         var msg  = document.getElementById("loading-msg");
-        new MutationObserver(function() {
-          if (root.querySelector("iframe")) {
-            msg.style.display = "none";
+        new MutationObserver(function(mutations, outerObs) {
+          var iframe = root.querySelector("iframe");
+          if (!iframe) return;
+          outerObs.disconnect();
+
+          // Inject CSS to hide shinylive's honeycomb inside the iframe
+          function injectHide(doc) {
+            if (!doc || !doc.head) return;
+            var s = doc.createElement("style");
+            s.textContent = ".loading-animation { display: none !important; }";
+            doc.head.appendChild(s);
+          }
+
+          function setupInnerWatch() {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            injectHide(doc);
+            // Watch inside iframe for Shiny being ready
+            new MutationObserver(function(m, innerObs) {
+              if (doc.querySelector(".shiny-input-container, .shiny-bound-output")) {
+                msg.style.display = "none";
+                innerObs.disconnect();
+              }
+            }).observe(doc.documentElement, { childList: true, subtree: true });
+          }
+
+          if (iframe.contentDocument && iframe.contentDocument.readyState !== "loading") {
+            setupInnerWatch();
+          } else {
+            iframe.addEventListener("load", setupInnerWatch);
           }
         }).observe(root, { childList: true, subtree: true });
       });
