@@ -46,7 +46,7 @@
         var root = document.getElementById("root");
         var msg  = document.getElementById("loading-msg");
         new MutationObserver(function() {
-          if (root.querySelector(".shiny-input-container, .shiny-bound-output, #shiny-disconnected-overlay")) {
+          if (root.querySelector("iframe")) {
             msg.style.display = "none";
           }
         }).observe(root, { childList: true, subtree: true });
