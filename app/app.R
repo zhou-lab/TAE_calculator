@@ -235,7 +235,32 @@ ui <- fluidPage(
       .section-title { font-weight: 600; font-size: 1em; color: #555;
                        margin-bottom: 10px; text-transform: uppercase;
                        letter-spacing: 0.04em; }
+      .step-list { list-style: none; padding: 0; margin: 0; counter-reset: step-counter; }
+      .step-list li {
+        counter-increment: step-counter; display: flex; align-items: baseline;
+        margin-bottom: 6px; font-size: 0.88em; color: #444; line-height: 1.45;
+      }
+      .step-list li::before {
+        content: counter(step-counter) '.'; min-width: 18px;
+        color: #2c7be5; font-weight: 600; font-size: 0.9em;
+        margin-right: 8px; flex-shrink: 0;
+      }
+      .def-term { font-weight: 600; color: #2c3e50; margin-bottom: 3px; }
+      .def-body { font-size: 0.87em; color: #555; line-height: 1.5; margin-bottom: 14px; }
     "))
+  ),
+
+  div(class = "card",
+    h4("How to Use This Calculator"),
+    tags$ol(class = "step-list",
+      tags$li("Sequence your sample(s) of interest to a target level of reads based on your question of interest. As a starting point, aim for ~45,000 mapped reads to achieve a predicted TAE <5%, even for low-level DNA modifications (<0.3% total C). If your question pertains to a specific genomic region or sequence context (e.g. specific genomic elements, CpG vs. non-CpG), you can use the TAE calculator to pre-select the target number of reads based on your desired accuracy."),
+      tags$li("Perform bioinformatic processing, including read mapping and calculation of the measurement of interest (e.g. 5hmCpG levels in transcribed regions)."),
+      tags$li("Enter the resulting parameters into the TAE calculator using the definitions provided below.")
+    ),
+    hr(),
+    actionButton("load_example", "Load example inputs",
+                 style = "font-size:0.85em; padding:5px 14px;"),
+    uiOutput("example_ui")
   ),
 
   div(class = "card",
@@ -249,9 +274,9 @@ ui <- fluidPage(
       column(5,
         div(class = "section-title", "Sequencing Parameters"),
 
-        numericInput("num_reads", "Total reads sequenced",
+        numericInput("num_reads", "Total mapped reads",
                      value = 30000, min = 100, step = 1000),
-        div(class = "hint", "Number of reads after alignment/filtering"),
+        div(class = "hint", "Total number of mapped, deduplicated reads aligning to the whole genome (even if your analysis targets a specific region)"),
 
         numericInput("read_length", "Read length (bp)",
                      value = 150, min = 25, max = 1000, step = 25),
@@ -259,15 +284,17 @@ ui <- fluidPage(
         numericInput("beta_val",
                      "Calculated beta-value (0 – 1)",
                      value = 0.05, min = 0, max = 1, step = 0.001),
-        div(class = "hint", "Per-site modification fraction"),
+        div(class = "hint", "Frequency of the modification of interest as determined by bioinformatic processing (e.g. 5hmCpG). Can reflect a specific modification and/or sequence context."),
 
-        selectInput("c_type", "Modification type",
+        selectInput("c_type", "Sequence context",
                     choices = c("CpG", "CpH", "Total C"),
                     selected = "CpG"),
+        div(class = "hint", "Context used to calculate the beta-value above. The calculator uses genomic CpG/CpH prevalence to convert the beta-value into % total C modification."),
 
         selectInput("region", "Genomic region",
                     choices = REGION_CHOICES,
                     selected = "Whole Genome"),
+        div(class = "hint", "The calculator uses a scaling factor for the selected region to estimate the effective read depth, yielding the log\u2082(genome coverage fraction) model input."),
 
         br(),
         actionButton("calc", "Calculate TAE",
@@ -292,6 +319,20 @@ ui <- fluidPage(
             "Y-axis: log\u2082(genome CpG coverage fraction / 100) (model input y).")
       )
     )
+  ),
+
+  div(class = "card",
+    h4("Definitions"),
+    div(class = "def-term", "Total mapped reads"),
+    div(class = "def-body", "The total number of mapped, deduplicated reads from the sample of interest that align to the whole genome. Even if your analysis targets a specific genomic region, enter the whole-genome read count here. The TAE calculator uses the prevalence of the selected genomic element to estimate the number of reads mapping to it."),
+    div(class = "def-term", "Read length"),
+    div(class = "def-body", "The number of bases in each read. Combined with the total read count, this allows for calculation of the total genomic coverage."),
+    div(class = "def-term", "Calculated beta-value"),
+    div(class = "def-body", "The frequency of the modification of interest (range 0.00\u20131.00), as determined by bioinformatic processing. Of note, this can be in a specific modification and/or sequence context (e.g. 5hmCpG)."),
+    div(class = "def-term", "Sequence context"),
+    div(class = "def-body", "Select either Total C, CpG or CpH, as per the context that was used to calculate the beta-value above. The TAE calculator will use the genomic prevalence of CpG vs. CpH to convert the measured beta-value into a % Total C modification, which serves as one input into the interpolated TAE plot."),
+    div(class = "def-term", "Genomic region"),
+    div(class = "def-body", "Select either total genome or a specific ChromHMM element. The TAE calculator will use the total mapped reads, read length, and a scaling factor based on whether the data are derived from the whole genome or a specific genomic element to yield the log\u2082(genome coverage fraction), which is the second input into the interpolated TAE plot.")
   ),
 
   div(class = "card",
@@ -348,6 +389,32 @@ ui <- fluidPage(
 # Server
 # ---------------------------------------------------------------------------
 server <- function(input, output, session) {
+
+  observeEvent(input$load_example, {
+    updateNumericInput(session, "num_reads",   value = 26203)
+    updateNumericInput(session, "read_length", value = 150)
+    updateNumericInput(session, "beta_val",    value = 0.043)
+    updateSelectInput(session,  "c_type",      selected = "CpG")
+    updateSelectInput(session,  "region",      selected = "Tx")
+  })
+
+  output$example_ui <- renderUI({
+    req(input$load_example > 0)
+    div(style = "margin-top: 14px; font-size: 0.88em; color: #444;",
+      tags$strong("Example: "), "Determining the error of 5hmC detection by Sparse Sequencing in Actively Transcribed (Tx) genomic elements at embryonic day 16.",
+      tags$ul(style = "margin: 6px 0 6px 0; padding-left: 18px; line-height: 1.5;",
+        tags$li("Brain sample collected and gDNA processed with bACE-Seq pipeline."),
+        tags$li("Sequenced as part of a MiSeq run using a 150-cycle kit."),
+        tags$li("26,203 total post-processing reads mapped to the whole genome."),
+        tags$li("Interrogating only Tx regions, the 5hmCpG level (beta-value) = 4.3%.")
+      ),
+      tags$strong("Expected output: "),
+      tags$ul(style = "margin: 4px 0 0 0; padding-left: 18px; line-height: 1.5;",
+        tags$li("TAE = 38.368%"),
+        tags$li(HTML("Beta-value &plusmn; Error = 0.0430 &plusmn; 0.0165 &nbsp;&rArr;&nbsp; 4.30 &plusmn; 1.65% 5hmCpG in Tx region"))
+      )
+    )
+  })
 
   calc_result <- eventReactive(input$calc, {
     # -- Inputs
