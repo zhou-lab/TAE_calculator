@@ -32,6 +32,9 @@ jobs:
           shinylive::export('app', 'docs')
         shell: Rscript {0}
 
+      - name: Restore custom index.html
+        run: git checkout HEAD -- docs/index.html
+
       - name: Add .nojekyll
         run: touch docs/.nojekyll
 
